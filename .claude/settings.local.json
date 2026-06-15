@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import playwright; print\\('playwright', playwright.__version__\\)\")",
+      "Bash(python -c \"from playwright.sync_api import sync_playwright; p=sync_playwright\\(\\).start\\(\\); b=p.chromium.launch\\(headless=True\\); print\\('chromium ok'\\); b.close\\(\\); p.stop\\(\\)\")",
+      "Bash(tasklist)",
+      "Bash(python .verify/drive.py)",
+      "Bash(npx next *)",
+      "Bash(netstat -ano)",
+      "Bash(awk '{print $5}')",
+      "Bash(xargs -r taskkill //F //PID)",
+      "Bash(curl -s http://localhost:3001/api/artists/vincent-van-gogh)",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{const j=JSON.parse\\(d\\);const s=j.artworks[0];console.log\\('hero:',s.title,'| medium:',JSON.stringify\\(s.medium\\),'| year:',s.year\\)}\\)\")"
+    ]
+  }
+}

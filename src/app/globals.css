@@ -1,0 +1,78 @@
+:root {
+  --bg: #0c0b0a;
+  --bg-soft: #14110f;
+  --ink: #ece6da;
+  --ink-dim: #9b9286;
+  --gold: #c9a25a;
+  --gold-bright: #e7c885;
+  --line: rgba(201, 162, 90, 0.22);
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+#__next,
+main {
+  height: 100%;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+::selection {
+  background: var(--gold);
+  color: #1a1714;
+}
+
+/* Subtle film-grain + vignette over the whole app for a gallery mood. */
+.vignette::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  background: radial-gradient(
+    120% 120% at 50% 40%,
+    transparent 55%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+}
+
+button {
+  font-family: var(--font-sans);
+  cursor: pointer;
+  color: inherit;
+  background: none;
+  border: none;
+}
+
+a {
+  color: var(--gold-bright);
+  text-decoration: none;
+}
+
+/* Thin gold scrollbars where they appear */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(201, 162, 90, 0.3);
+  border-radius: 4px;
+}
