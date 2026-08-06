@@ -1,6 +1,6 @@
 'use client';
 
-import { Component, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Component, Suspense, useCallback, useMemo, useRef } from 'react';
 import type { ReactNode } from 'react';
 import * as THREE from 'three';
 import { useFrame, useLoader, useThree } from '@react-three/fiber';
@@ -122,32 +122,6 @@ class PaintingBoundary extends Component<
   }
 }
 
-/**
- * Nothing in the hall moves, so its dozen shadow maps only need rendering when
- * a painting appears — not sixty times a second. We keep re-rendering for a
- * couple of seconds after each arrival to cover textures still decoding.
- */
-function StaticShadows({ revision }: { revision: number }) {
-  const { gl } = useThree();
-  const settleUntil = useRef(0);
-
-  useEffect(() => {
-    gl.shadowMap.autoUpdate = false;
-    return () => {
-      gl.shadowMap.autoUpdate = true;
-    };
-  }, [gl]);
-
-  useEffect(() => {
-    settleUntil.current = performance.now() + 2500;
-  }, [revision]);
-
-  useFrame(() => {
-    if (performance.now() < settleUntil.current) gl.shadowMap.needsUpdate = true;
-  });
-  return null;
-}
-
 /** Motes drifting in the beams. Almost subliminal, and the air stops feeling empty. */
 function Dust({ length }: { length: number }) {
   const COUNT = 360;
@@ -239,12 +213,12 @@ export default function Scene({
 }) {
   const { placements, length } = useMemo(() => layoutArtworks(artworks), [artworks]);
   const handles = useRef<Map<string, PaintingHandle>>(new Map());
-  const [hung, setHung] = useState(0);
 
+  // Only FocusTracker reads this, and it reads it from a ref every frame — no
+  // state, so a painting arriving never re-renders the scene.
   const register = useCallback((key: string, h: PaintingHandle | null) => {
     if (h) handles.current.set(key, h);
     else handles.current.delete(key);
-    setHung((n) => n + 1);
   }, []);
 
   const obstacles = useMemo(() => benchObstacles(length), [length]);
@@ -285,7 +259,6 @@ export default function Scene({
         </PaintingBoundary>
       ))}
 
-      <StaticShadows revision={hung} />
       <FocusTracker handles={handles} onFocus={onFocus} />
       <Player
         length={length}

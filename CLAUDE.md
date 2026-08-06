@@ -73,16 +73,20 @@ Every painting is lit by **one ceiling track spot solved from geometry**, not by
 - **`decay` is 1, not the physical 2.** Over a 2 m canvas, inverse-square falloff from a fixture this close makes the top ~4× brighter than the bottom — the "top blown out, bottom mud" look.
 - **Bloom's `luminanceThreshold` is above 1.0 on purpose.** Paintings peak around white; blooming them is exactly what turns a pale canvas into an unreadable glowing rectangle. Only emissive fixtures (laylights, lamp lenses) are meant to flare.
 - **`exposure.ts` dims or lifts each painting individually.** It samples the decoded texture down to 32×32, measures mean and 92nd-percentile linear luminance, and returns a gain (0.4–2.1) for that painting's spot — pale works get less light, dark works more. Without it a Turner sky and a Rembrandt interior cannot both be legible under one fixture.
-- The paintings carry **no emissive**. If art looks dark, fix the light budget above; don't reintroduce self-illumination.
+- The paintings carry **no emissive** and **no normal map**. A canvas-weave bump reads as a dot screen crawling over the picture when you step up close. If art looks dark, fix the light budget above; don't reintroduce self-illumination or surface detail.
 
-### Two gotchas that cost real debugging time
+### There are no real-time shadows — this is deliberate
+`shadows` is off on the `<Canvas>` and nothing sets `castShadow`/`receiveShadow`. Frames and benches get **painted** shadows instead (`softRectShadow` / `softShadowTexture` in `textures.ts`). A shadow-mapped spot per painting meant ~13 extra samplers bound into every material in the scene, and the heaviest of them — the reflective floor — could exhaust texture units and render black a second after entering the room. Nothing in the hall moves, so a painted quad is both safer and far cheaper. **Don't add `castShadow` back without re-checking the floor on real hardware.**
+
+The floor's `MeshReflectorMaterial` is the most expensive material here: keep `resolution`, `blur` and especially `mixStrength` low so the base grey always dominates and a bad reflection pass can never black it out.
+
+### Three gotchas that cost real debugging time
 - **Coplanar surfaces z-fight.** The canvas plane and the stretcher box behind it must not share a z; at some viewing distances the dark wood wins and the painting reads as an empty black frame.
 - **A plane faces its local +z.** The entrance wall must *not* be rotated by π or it back-face culls into nothing when you turn round.
+- **Wikimedia rate-limits.** Fetching image URLs concurrently to audit them will earn a 429 across the board and produce a completely misleading "everything is broken" report. Check serially, ~1 req/s.
 
 ### Robustness
 Texture failures used to take the whole canvas down. `PaintingBoundary` in `Scene.tsx` now catches them, clears the loader cache and remounts up to 3 times with backoff (twelve full-size Commons images at once will occasionally earn a 429). Only a genuinely dead URL ends as one blank patch of wall.
-
-Shadow maps are static: `StaticShadows` sets `gl.shadowMap.autoUpdate = false` and only re-renders for ~2.5 s after a painting mounts. Nothing in the hall moves, so ~13 shadowed spotlights cost one render, not sixty a second. **If you ever animate scene geometry, this has to change.**
 
 If a hero painting looks wrong in live mode, it's almost always stale Neon data needing a re-ingest, not a layout bug.
 

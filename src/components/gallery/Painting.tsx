@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { useTexture } from '@react-three/drei';
 import type { ArtworkDTO } from '@/lib/types';
 import { useAutoExposure } from './exposure';
-import { canvasWeaveNormal } from './textures';
+import { softRectShadow } from './textures';
 import { TRACK_OUT, TRACK_Y } from './dims';
 
 export interface PaintingHandle {
@@ -33,7 +33,6 @@ function Moulding({
   depth,
   z,
   material,
-  castShadow = false,
 }: {
   innerW: number;
   innerH: number;
@@ -41,26 +40,25 @@ function Moulding({
   depth: number;
   z: number;
   material: React.ReactNode;
-  castShadow?: boolean;
 }) {
   const outerW = innerW + border * 2;
   const hx = innerW / 2 + border / 2;
   const hy = innerH / 2 + border / 2;
   return (
     <group position={[0, 0, z]}>
-      <mesh position={[0, hy, 0]} castShadow={castShadow}>
+      <mesh position={[0, hy, 0]}>
         <boxGeometry args={[outerW, border, depth]} />
         {material}
       </mesh>
-      <mesh position={[0, -hy, 0]} castShadow={castShadow}>
+      <mesh position={[0, -hy, 0]}>
         <boxGeometry args={[outerW, border, depth]} />
         {material}
       </mesh>
-      <mesh position={[-hx, 0, 0]} castShadow={castShadow}>
+      <mesh position={[-hx, 0, 0]}>
         <boxGeometry args={[border, innerH, depth]} />
         {material}
       </mesh>
-      <mesh position={[hx, 0, 0]} castShadow={castShadow}>
+      <mesh position={[hx, 0, 0]}>
         <boxGeometry args={[border, innerH, depth]} />
         {material}
       </mesh>
@@ -94,7 +92,6 @@ export default function Painting({
 }) {
   const texture = useTexture(artwork.thumbUrl);
   const gain = useAutoExposure(texture, artwork.key);
-  const weave = useMemo(() => canvasWeaveNormal(), []);
 
   useEffect(() => {
     texture.colorSpace = THREE.SRGBColorSpace;
@@ -125,16 +122,6 @@ export default function Painting({
 
   const [x, y, z] = position;
   const rotationY = Math.atan2(normal[0], normal[1]);
-
-  // Weave tiles at a fixed real-world density rather than per-canvas, so a big
-  // painting shows a bigger weave count like the real thing.
-  const weaveMap = useMemo(() => {
-    const t = weave.clone();
-    t.repeat.set(w * 2.2, h * 2.2);
-    t.needsUpdate = true;
-    return t;
-  }, [weave, w, h]);
-  useEffect(() => () => weaveMap.dispose(), [weaveMap]);
 
   const meshRef = useRef<THREE.Mesh>(null);
   const lightRef = useRef<THREE.SpotLight>(null);
@@ -185,6 +172,14 @@ export default function Painting({
 
   return (
     <group position={[x, y, z]} rotation={[0, rotationY, 0]}>
+      {/* Painted drop shadow on the wall. Real-time shadows are off scene-wide
+          (see textures.ts), and without this the frame looks stuck on with glue
+          rather than hung a hand's width off the plaster. */}
+      <mesh position={[0, -0.055, 0.003]}>
+        <planeGeometry args={[(w + border * 2) * 1.22, (h + border * 2) * 1.2]} />
+        <meshBasicMaterial map={softRectShadow()} transparent depthWrite={false} />
+      </mesh>
+
       {/* Stretcher: the canvas is wrapped over a wooden strainer, not glued flat.
           Its front face stops short of the canvas plane — coplanar surfaces
           z-fight, and at some distances the dark wood wins and the painting
@@ -194,13 +189,13 @@ export default function Painting({
         <meshStandardMaterial color="#2a2018" roughness={0.9} />
       </mesh>
 
-      {/* the painting */}
-      <mesh ref={meshRef} position={[0, 0, CANVAS_Z]} receiveShadow>
+      {/* The painting. Deliberately no normal map: a canvas-weave bump reads as
+          a dot screen crawling over the picture once you step up close, which
+          is worse than the plain, honest reproduction. */}
+      <mesh ref={meshRef} position={[0, 0, CANVAS_Z]}>
         <planeGeometry args={[w, h]} />
         <meshStandardMaterial
           map={texture}
-          normalMap={weaveMap}
-          normalScale={new THREE.Vector2(0.16, 0.16)}
           roughness={0.78}
           metalness={0}
           envMapIntensity={0.25}
@@ -226,7 +221,6 @@ export default function Painting({
         border={border}
         depth={0.075}
         z={0.038}
-        castShadow
         material={
           <meshStandardMaterial color="#3a2a17" roughness={0.52} metalness={0.35} />
         }
@@ -271,10 +265,6 @@ export default function Painting({
         distance={spot.dist * 3.2}
         intensity={spot.intensity}
         color="#fff2dd"
-        castShadow
-        shadow-mapSize={[512, 512]}
-        shadow-bias={-0.0007}
-        shadow-normalBias={0.025}
       />
       <object3D ref={targetRef} />
     </group>

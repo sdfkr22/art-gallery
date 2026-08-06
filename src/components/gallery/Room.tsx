@@ -24,15 +24,15 @@ function Bench({ x, z }: { x: number; z: number }) {
   return (
     <group position={[x, 0, z]}>
       {/* leather seat, lifted just proud of the plinth */}
-      <mesh position={[0, 0.45, 0]} castShadow receiveShadow>
+      <mesh position={[0, 0.45, 0]}>
         <boxGeometry args={[BENCH_HALF_X * 2, 0.11, BENCH_HALF_Z * 2]} />
         <meshStandardMaterial color="#5b3a2e" roughness={0.58} metalness={0.04} />
       </mesh>
-      <mesh position={[0, 0.2, 0]} castShadow receiveShadow>
+      <mesh position={[0, 0.2, 0]}>
         <boxGeometry args={[BENCH_HALF_X * 1.35, 0.4, BENCH_HALF_Z * 1.6]} />
         <meshStandardMaterial {...oak} roughness={0.6} metalness={0.1} />
       </mesh>
-      <mesh position={[0, 0.03, 0]} receiveShadow>
+      <mesh position={[0, 0.03, 0]}>
         <boxGeometry args={[BENCH_HALF_X * 1.75, 0.06, BENCH_HALF_Z * 1.9]} />
         <meshStandardMaterial color="#2b211a" roughness={0.7} />
       </mesh>
@@ -140,20 +140,25 @@ export default function Room({
   return (
     <group>
       {/* ------------------------------ floor ------------------------------ */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, midZ]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, midZ]}>
         <planeGeometry args={[width, depth]} />
+        {/* Honed limestone, not a mirror. The reflection is deliberately a weak
+            top-up over a solidly grey base: it used to be strong enough that if
+            the reflection pass came back dark the whole floor went black a
+            second after entering the room. Keep `mixStrength` low, and keep the
+            render target small — this is the most expensive material here. */}
         <MeshReflectorMaterial
-          resolution={1024}
-          mirror={0.32}
-          mixStrength={0.9}
-          mixBlur={6}
-          blur={[420, 120]}
-          depthScale={1.1}
-          minDepthThreshold={0.25}
-          maxDepthThreshold={1.4}
-          color="#b0a89b"
-          roughness={0.62}
-          metalness={0.16}
+          resolution={512}
+          mirror={0.25}
+          mixStrength={0.3}
+          mixBlur={8}
+          blur={[300, 100]}
+          depthScale={0.9}
+          minDepthThreshold={0.3}
+          maxDepthThreshold={1.3}
+          color="#cfc8bd"
+          roughness={0.68}
+          metalness={0.1}
           map={stone.map}
           roughnessMap={stone.roughnessMap}
           normalMap={stone.normalMap}
@@ -167,7 +172,6 @@ export default function Room({
           key={`wall${s}`}
           position={[s * halfW, height / 2, midZ]}
           rotation={[0, -s * (Math.PI / 2), 0]}
-          receiveShadow
         >
           <planeGeometry args={[depth, height]} />
           <meshStandardMaterial
@@ -180,7 +184,7 @@ export default function Room({
       ))}
 
       {/* end wall — the hero hangs here */}
-      <mesh position={[0, height / 2, length]} receiveShadow>
+      <mesh position={[0, height / 2, length]}>
         <planeGeometry args={[width, height]} />
         <meshStandardMaterial
           color={wallColor}
@@ -198,13 +202,12 @@ export default function Room({
           <mesh
             key={`ent${s}`}
             position={[(s * (width / 2 + DOOR_W / 2)) / 2, height / 2, 0]}
-            receiveShadow
           >
             <planeGeometry args={[(width - DOOR_W) / 2, height]} />
             <meshStandardMaterial color={wallColor} roughness={0.97} {...plaster} />
           </mesh>
         ))}
-        <mesh position={[0, (DOOR_H + height) / 2, 0]} receiveShadow>
+        <mesh position={[0, (DOOR_H + height) / 2, 0]}>
           <planeGeometry args={[DOOR_W, height - DOOR_H]} />
           <meshStandardMaterial color={wallColor} roughness={0.97} {...plaster} />
         </mesh>
@@ -258,7 +261,7 @@ export default function Room({
       {/* --------------------------- skirting + rail ----------------------- */}
       {([-1, 1] as const).map((s) => (
         <group key={`trim${s}`}>
-          <mesh position={[s * (halfW - 0.03), SKIRTING_H / 2, midZ]} receiveShadow castShadow>
+          <mesh position={[s * (halfW - 0.03), SKIRTING_H / 2, midZ]}>
             <boxGeometry args={[0.06, SKIRTING_H, depth]} />
             <meshStandardMaterial {...oak} roughness={0.55} metalness={0.15} />
           </mesh>
@@ -275,7 +278,7 @@ export default function Room({
         </group>
       ))}
       {/* the same trim across the end wall */}
-      <mesh position={[0, SKIRTING_H / 2, length - 0.03]} receiveShadow>
+      <mesh position={[0, SKIRTING_H / 2, length - 0.03]}>
         <boxGeometry args={[width, SKIRTING_H, 0.06]} />
         <meshStandardMaterial {...oak} roughness={0.55} metalness={0.15} />
       </mesh>

@@ -25,7 +25,6 @@ export default function GalleryView({
     <div style={{ position: 'absolute', inset: 0, background: '#0a0807' }}>
       {artist && artist.artworks.length > 0 && (
         <Canvas
-          shadows="soft"
           dpr={[1, 2]}
           gl={{
             antialias: false,

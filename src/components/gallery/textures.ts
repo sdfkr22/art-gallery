@@ -196,35 +196,36 @@ export function plasterMaps(): SurfaceMaps {
   return plasterCache;
 }
 
-let weaveCache: THREE.Texture | null = null;
+let rectShadowCache: THREE.Texture | null = null;
 
 /**
- * Linen weave for the painting surface. It is what makes a canvas catch the
- * raking light of its picture lamp instead of reading as a printed sticker.
+ * Soft-edged rectangular alpha, used as the painted drop shadow a frame casts
+ * on the wall. See `softShadowTexture` for why the shadows are painted.
  */
-export function canvasWeaveNormal(): THREE.Texture {
-  if (weaveCache) return weaveCache;
+export function softRectShadow(): THREE.Texture {
+  if (rectShadowCache) return rectShadowCache;
   const S = 128;
-  const height = new Float32Array(S * S);
-  for (let y = 0; y < S; y++) {
-    for (let x = 0; x < S; x++) {
-      // over-under of warp and weft, plus slubs in the thread thickness
-      const warp = Math.sin((x / S) * Math.PI * 2 * 32);
-      const weft = Math.sin((y / S) * Math.PI * 2 * 32);
-      const slub = fbm(x / S, y / S, 16, 4, 3) * 0.4;
-      height[y * S + x] = (warp * weft) * 0.5 + slub;
-    }
-  }
-  weaveCache = toTexture(heightToNormal(height, S, 0.9), 1, false);
-  return weaveCache;
+  const { canvas, ctx } = newCanvas(S);
+  ctx.filter = 'blur(11px)';
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(20, 20, S - 40, S - 40);
+  ctx.filter = 'none';
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  rectShadowCache = tex;
+  return tex;
 }
 
 let blobCache: THREE.Texture | null = null;
 
 /**
- * Soft round alpha blob used as a painted contact shadow. The room's fill
- * lights don't cast shadows (thirteen shadow maps is already the budget), so
- * furniture would otherwise hover a centimetre off the floor.
+ * Soft round alpha blob used as a painted contact shadow.
+ *
+ * The hall casts no real-time shadows at all. A shadow-mapped spot per painting
+ * meant a dozen extra samplers bound into every material in the scene, and the
+ * heaviest of them — the reflective floor — could run out of texture units and
+ * render black on some drivers. Nothing in the room moves, so painted shadows
+ * cost one quad and cannot break.
  */
 export function softShadowTexture(): THREE.Texture {
   if (blobCache) return blobCache;
