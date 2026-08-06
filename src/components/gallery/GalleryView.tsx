@@ -32,7 +32,7 @@ export default function GalleryView({
             toneMapping: THREE.NoToneMapping,
             powerPreference: 'high-performance',
           }}
-          camera={{ fov: 64, near: 0.1, far: 120, position: [0, 1.62, 1.2] }}
+          camera={{ fov: 58, near: 0.08, far: 140, position: [0, 1.66, 1.2] }}
         >
           <color attach="background" args={['#0a0807']} />
           <Scene
